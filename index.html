@@ -1,131 +1,222 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema de Cupons</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sorteio Drogaria Polvilho</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    h1 { text-align: center; }
-    .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    input, button, select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; }
-    button { background: #007bff; color: white; border: none; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    .cupom-item { background: #e9e9e9; padding: 10px; margin-top: 5px; border-radius: 5px; }
-    #loginBox { max-width: 350px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; padding: 18px; background: #f5f5f5; color:#222 }
+    .container { max-width: 720px; margin: 0 auto; background:#fff; padding:18px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+    h1,h2{ text-align:center; margin:8px 0; }
+    label{ display:block; margin-top:12px; font-weight:600; }
+    input[type="text"], input[type="number"], textarea, select, button {
+      width:100%; padding:10px; margin-top:6px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box;
+    }
+    textarea { min-height:80px; resize:vertical; }
+    .row { display:flex; gap:10px; }
+    .row > * { flex:1; }
+    .small { max-width:160px; }
+    .actions { display:flex; gap:10px; margin-top:14px; }
+    .btn { background:#007bff; color:white; border:none; cursor:pointer; padding:10px 14px; border-radius:6px; }
+    .btn.secondary { background:#28a745; }
+    .btn.danger { background:#dc3545; }
+    .note { font-size:0.95rem; color:#555; margin-top:8px; }
+    .rules { background:#fafafa; border:1px dashed #ddd; padding:10px; border-radius:6px; margin-top:12px; }
+    .footer { text-align:center; font-size:0.9rem; color:#666; margin-top:12px; }
+    .hidden { display:none !important; }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Sorteio — Drogaria Polvilho</h1>
 
-  <!-- LOGIN -->
-  <div id="loginBox" class="container">
-    <h2>Login do Administrador</h2>
-    <label>Senha:</label>
-    <input type="password" id="senhaLogin" placeholder="Digite a senha" />
-    <button onclick="fazerLogin()">Entrar</button>
-  </div>
-
-  <!-- SISTEMA -->
-  <div id="app" class="container" style="display:none;">
-    <h1>Cadastro de Cupons</h1>
-
-    <label>Nome do Cliente:</label>
-    <input type="text" id="nome" placeholder="Ex: Maria Silva" />
-
-    <label>Tipo de Cliente:</label>
-    <select id="tipoCliente" onchange="mostrarEmpresa()">
-      <option value="avista">Cliente à Vista</option>
-      <option value="empresa">Cliente Empresa</option>
-    </select>
-
-    <div id="campoEmpresa" style="display:none;">
-      <label>Nome da Empresa:</label>
-      <input type="text" id="empresa" placeholder="Nome da empresa" />
+    <h2>Regras / Informações</h2>
+    <div id="rulesDisplay" class="rules"></div>
+    <div class="note">Se você for administrador e quiser editar as regras, clique em <strong>Editar Regras</strong> e informe a senha.</div>
+    <div class="actions" style="margin-top:8px;">
+      <button class="btn" onclick="editarRegras()">Editar Regras</button>
+      <button class="btn" onclick="abrirExport()">Exportar para Sorteio</button>
+      <button class="btn danger" onclick="apagarDados()">Apagar Cadastros (limpar)</button>
     </div>
 
-    <label>Número do Cupom Fiscal:</label>
-    <input type="text" id="cupom" placeholder="Ex: 123456" />
+    <hr style="margin:16px 0">
 
-    <button onclick="adicionarCupom()">Cadastrar Cupom</button>
+    <h2>Participar do Sorteio</h2>
+    <div class="note">Preencha os dados abaixo. O site é aberto a todos — seus dados são armazenados, mas <strong>não aparecem publicamente</strong>.</div>
 
-    <h2>Cupons Cadastrados</h2>
-    <div id="lista"></div>
+    <label for="nome">Nome do Cliente</label>
+    <input id="nome" type="text" placeholder="Ex: Maria Silva" maxlength="100" />
 
-    <button onclick="exportar()" style="background: green; margin-top:20px;">Exportar para Sorteio</button>
+    <label for="cupom">Número do Cupom Fiscal</label>
+    <input id="cupom" type="text" placeholder="Ex: 123456" maxlength="50" />
+
+    <label for="tipoCliente">Tipo de Compra</label>
+    <select id="tipoCliente" onchange="mostrarEmpresa()">
+      <option value="avista">Compra à Vista</option>
+      <option value="convenio">Compra Convênio</option>
+    </select>
+
+    <div id="campoEmpresa" class="hidden">
+      <label for="empresa">Nome da Empresa (convênio)</label>
+      <input id="empresa" type="text" placeholder="Nome da empresa" maxlength="120" />
+    </div>
+
+    <label for="comentario">Comentário (opcional, até 100 caracteres)</label>
+    <textarea id="comentario" maxlength="100" placeholder="Ex: Preferência de entrega, observação..."></textarea>
+
+    <div style="display:flex; gap:10px; margin-top:12px;">
+      <button class="btn secondary" onclick="adicionarCupom()">Enviar Participação</button>
+      <button class="btn" onclick="limparFormulario()">Limpar</button>
+    </div>
+
+    <div id="mensagem" class="note" style="margin-top:10px;"></div>
+
+    <div class="footer">© Drogaria Polvilho</div>
   </div>
 
   <script>
-    const SENHA_CORRETA = "@Dp10092015@"; // altere aqui a senha
+    // SENHAS ADMIN
+    const EXPORT_PASSWORD = "@Dp1002015@";   // usada para exportar/apagar dados
+    const RULES_PASSWORD  = "@Dp10092015@";  // usada para editar o campo regras
 
-    let cupons = JSON.parse(localStorage.getItem('cupons')) || [];
+    // Chave no localStorage
+    const STORAGE_KEY = "sorteio_cupons_drogariapolvilho";
+    const STORAGE_RULES = "sorteio_regras_drogariapolvilho";
 
-    function fazerLogin() {
-      const senha = document.getElementById('senhaLogin').value;
-      if (senha === SENHA_CORRETA) {
-        document.getElementById('loginBox').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-      } else {
-        alert('Senha incorreta!');
-      }
+    // Carrega regras e exibe
+    function carregarRegras() {
+      const r = localStorage.getItem(STORAGE_RULES) || "Nenhuma regra definida. (Administrador pode editar com senha.)";
+      document.getElementById('rulesDisplay').textContent = r;
     }
 
+    // Mostrar/ocultar campo empresa
     function mostrarEmpresa() {
       const tipo = document.getElementById('tipoCliente').value;
-      document.getElementById('campoEmpresa').style.display = tipo === 'empresa' ? 'block' : 'none';
+      document.getElementById('campoEmpresa').classList.toggle('hidden', tipo !== 'convenio');
     }
 
-    function atualizarLista() {
-      const lista = document.getElementById('lista');
-      lista.innerHTML = '';
-      cupons.forEach(c => {
-        lista.innerHTML += `<div class='cupom-item'><strong>${c.cupom}</strong> - ${c.nome} (${c.tipo}${c.empresa ? ' - ' + c.empresa : ''})</div>`;
-      });
+    // limpar form
+    function limparFormulario() {
+      document.getElementById('nome').value = "";
+      document.getElementById('cupom').value = "";
+      document.getElementById('comentario').value = "";
+      document.getElementById('empresa').value = "";
+      document.getElementById('tipoCliente').value = "avista";
+      mostrarEmpresa();
+      document.getElementById('mensagem').textContent = "";
     }
 
+    // Adicionar cupom (aberto ao público)
     function adicionarCupom() {
       const nome = document.getElementById('nome').value.trim();
       const cupom = document.getElementById('cupom').value.trim();
       const tipo = document.getElementById('tipoCliente').value;
-      const empresa = document.getElementById('empresa').value.trim();
+      const empresa = (tipo === 'convenio') ? document.getElementById('empresa').value.trim() : "";
+      const comentario = document.getElementById('comentario').value.trim().slice(0,100);
 
       if (!nome || !cupom) {
-        alert('Preencha todos os campos obrigatórios.');
+        document.getElementById('mensagem').textContent = "Preencha nome e número do cupom.";
         return;
       }
 
-      if (tipo === 'empresa' && !empresa) {
-        alert('Informe o nome da empresa.');
+      // Carrega array existente
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+
+      // Verifica duplicata do cupom
+      if (data.some(d => d.cupom === cupom)) {
+        document.getElementById('mensagem').textContent = "Este número de cupom já foi cadastrado.";
         return;
       }
 
-      if (cupons.some(c => c.cupom === cupom)) {
-        alert('Este número de cupom já está cadastrado!');
+      // Criar registro com data/hora
+      const agora = new Date();
+      const registro = {
+        nome: nome,
+        cupom: cupom,
+        tipo: tipo,
+        empresa: empresa,
+        comentario: comentario,
+        data_inclusao: agora.toISOString() // armazena em ISO para consistência
+      };
+
+      data.push(registro);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+      limparFormulario();
+      document.getElementById('mensagem').textContent = "Participação cadastrada com sucesso. Boa sorte!";
+    }
+
+    // Exportar — protegido por senha
+    function abrirExport() {
+      const pwd = prompt("Informe a senha para exportar os dados:");
+      if (pwd !== EXPORT_PASSWORD) {
+        alert("Senha incorreta. Operação cancelada.");
         return;
       }
-
-      cupons.push({ nome, cupom, tipo, empresa: tipo === 'empresa' ? empresa : '' });
-      localStorage.setItem('cupons', JSON.stringify(cupons));
-      atualizarLista();
-
-      document.getElementById('nome').value = '';
-      document.getElementById('cupom').value = '';
-      document.getElementById('empresa').value = '';
-      document.getElementById('tipoCliente').value = 'avista';
-      mostrarEmpresa();
+      exportar();
     }
 
     function exportar() {
-      const texto = cupons.map(c => `${c.cupom};${c.nome};${c.tipo};${c.empresa}`).join('\n');
-      const blob = new Blob([texto], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      if (!data.length) {
+        alert("Não há registros a exportar.");
+        return;
+      }
 
+      // Monta CSV com ; separador (cupom;nome;tipo;empresa;comentario;data)
+      const linhas = data.map(d => {
+        // Escapar ponto-e-vírgula e quebras nas strings simples
+        const safe = s => (s||"").toString().replace(/\n/g, " ").replace(/;/g, ",");
+        return `${safe(d.cupom)};${safe(d.nome)};${safe(d.tipo)};${safe(d.empresa)};${safe(d.comentario)};${safe(d.data_inclusao)}`;
+      });
+      const cabecalho = "cupom;nome;tipo;empresa;comentario;data_inclusao";
+      const texto = [cabecalho, ...linhas].join("\n");
+
+      const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'cupons_sorteio.txt';
+      const hoje = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
+      a.download = `cupons_sorteio_${hoje}.txt`;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     }
 
-    atualizarLista();
+    // Apagar dados — protegido
+    function apagarDados() {
+      const pwd = prompt("Informe a senha para apagar todos os cadastros:");
+      if (pwd !== EXPORT_PASSWORD) {
+        alert("Senha incorreta. Operação cancelada.");
+        return;
+      }
+      if (!confirm("Tem certeza que deseja apagar todos os cadastros? Esta ação não pode ser desfeita.")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      alert("Todos os cadastros foram apagados.");
+    }
+
+    // Editar regras (pede senha RULES_PASSWORD)
+    function editarRegras() {
+      const pwd = prompt("Informe a senha para editar as regras:");
+      if (pwd !== RULES_PASSWORD) {
+        alert("Senha incorreta. Operação cancelada.");
+        return;
+      }
+      const atual = localStorage.getItem(STORAGE_RULES) || "";
+      const novo = prompt("Digite as novas regras / informações (visíveis ao público):", atual);
+      if (novo === null) return; // cancelou
+      localStorage.setItem(STORAGE_RULES, novo);
+      carregarRegras();
+      alert("Regras atualizadas.");
+    }
+
+    // Inicialização
+    (function init(){
+      carregarRegras();
+      mostrarEmpresa();
+      // Garantir que o site não mostra lista pública (intencional)
+    })();
   </script>
 </body>
 </html>
